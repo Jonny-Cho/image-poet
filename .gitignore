@@ -1,0 +1,41 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Python
+backend/__pycache__/
+backend/.pytest_cache/
+backend/venv/
+backend/.venv/
+*.pyc
+*.pyo
+*.pyd
+
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/pubspec.lock
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker-compose.override.yml
