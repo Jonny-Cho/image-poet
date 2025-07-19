@@ -3,6 +3,7 @@ AI Poetry generation service using OpenAI
 """
 import base64
 import asyncio
+import os
 from typing import Tuple, Optional
 from pathlib import Path
 import openai
@@ -64,14 +65,58 @@ class PoetryService:
         Encode image to base64 string
         
         Args:
-            image_path: Path to image file
+            image_path: Path to image file or S3 URL
             
         Returns:
             Base64 encoded image string
         """
         try:
+            # Handle S3 URL or local file path
+            if image_path.startswith('http'):
+                # Download image from S3 using AWS SDK (handles authentication)
+                import boto3
+                import io
+                from urllib.parse import urlparse
+                
+                # Parse S3 URL to extract bucket and key
+                parsed_url = urlparse(image_path)
+                
+                # Handle different S3 URL formats
+                if 's3.amazonaws.com' in parsed_url.netloc:
+                    # Format: https://bucket-name.s3.amazonaws.com/key
+                    bucket_name = parsed_url.netloc.split('.')[0]
+                    key = parsed_url.path.lstrip('/')
+                elif 's3.' in parsed_url.netloc and '.amazonaws.com' in parsed_url.netloc:
+                    # Format: https://bucket-name.s3.region.amazonaws.com/key
+                    bucket_name = parsed_url.netloc.split('.')[0]
+                    key = parsed_url.path.lstrip('/')
+                else:
+                    # Fallback: assume first part is bucket name
+                    bucket_name = parsed_url.netloc.split('.')[0]
+                    key = parsed_url.path.lstrip('/')
+                
+                # Create S3 client using settings
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                    region_name=settings.AWS_DEFAULT_REGION
+                )
+                
+                # Download image from S3
+                try:
+                    img_data = io.BytesIO()
+                    s3_client.download_fileobj(bucket_name, key, img_data)
+                    img_data.seek(0)
+                    img = PILImage.open(img_data)
+                except Exception as s3_error:
+                    raise Exception(f"Failed to download from S3 bucket '{bucket_name}', key '{key}': {str(s3_error)}")
+            else:
+                # Open local file
+                img = PILImage.open(image_path)
+            
             # Open and potentially resize image to reduce API costs
-            with PILImage.open(image_path) as img:
+            with img:
                 # Convert to RGB if necessary
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
@@ -237,7 +282,7 @@ Requirements:
         """
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-vision-preview",
+                model="gpt-4o",
                 messages=[
                     {
                         "role": "user",
