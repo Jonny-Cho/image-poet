@@ -1,16 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 
 app = FastAPI(
-    title="Image Poet API",
-    description="이미지에서 시를 생성하는 AI API",
-    version="1.0.0"
+    title=settings.APP_NAME,
+    description="AI API for generating poetry from images",
+    version=settings.VERSION,
+    debug=settings.DEBUG
 )
 
-# CORS 설정 (Flutter 앱에서 접근 허용)
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 개발 환경에서만 사용
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

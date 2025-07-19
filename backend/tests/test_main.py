@@ -21,3 +21,20 @@ def test_cors_headers():
     response = client.get("/", headers={"Origin": "http://localhost:3000"})
     assert response.status_code == 200
     # CORS headers should be present due to middleware
+    assert "access-control-allow-origin" in response.headers
+    assert response.headers["access-control-allow-origin"] == "*"
+
+def test_cors_preflight():
+    """Test CORS preflight request"""
+    response = client.options(
+        "/", 
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type"
+        }
+    )
+    assert response.status_code == 200
+    assert "access-control-allow-origin" in response.headers
+    assert "access-control-allow-methods" in response.headers
+    assert "access-control-allow-headers" in response.headers
