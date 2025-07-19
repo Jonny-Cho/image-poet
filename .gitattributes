@@ -1,0 +1,22 @@
+# Override GitHub language detection
+*.py linguist-language=Python
+*.dart linguist-language=Dart
+
+# Mark generated platform files as vendored
+mobile/android/** linguist-vendored
+mobile/ios/** linguist-vendored  
+mobile/linux/** linguist-vendored
+mobile/macos/** linguist-vendored
+mobile/windows/** linguist-vendored
+mobile/web/** linguist-vendored
+
+# Mark Flutter generated files as vendored
+mobile/.dart_tool/** linguist-vendored
+mobile/build/** linguist-vendored
+
+# Backend is Python
+backend/** linguist-language=Python
+
+# Mobile is Dart/Flutter
+mobile/lib/** linguist-language=Dart
+mobile/test/** linguist-language=Dart
