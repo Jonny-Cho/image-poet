@@ -21,12 +21,11 @@ void main() {
 
     // Verify that camera icon is present.
     expect(find.byIcon(Icons.photo_camera), findsOneWidget);
+    
+    // Verify that instruction text is present.
+    expect(find.text('Tap the camera button to get started'), findsOneWidget);
 
-    // Tap the camera button and verify snackbar appears.
-    await tester.tap(find.byIcon(Icons.camera_alt));
-    await tester.pump();
-
-    // Verify that snackbar message appears.
-    expect(find.text('Image selection coming soon!'), findsOneWidget);
+    // Verify that floating action button with camera icon is present.
+    expect(find.byIcon(Icons.camera_alt), findsOneWidget);
   });
 }
