@@ -101,13 +101,15 @@ async def upload_image(
 
 async def generate_poetry_background(image_id: int, style: str, language: str):
     """
-    Background task for poetry generation
+    Background task for poetry generation with retry logic
     
     Args:
         image_id: Image database ID
         style: Poetry style
         language: Poetry language
     """
+    import asyncio
+    
     try:
         from app.core.database import SessionLocal
         
@@ -118,13 +120,33 @@ async def generate_poetry_background(image_id: int, style: str, language: str):
             if not db_image:
                 return
             
-            # Generate poetry
-            poetry_service = get_poetry_service()
-            title, content = await poetry_service.generate_poetry_from_image(
-                image_path=db_image.file_path,
-                style=style,
-                language=language
-            )
+            # Wait a bit for S3 upload to be fully propagated
+            await asyncio.sleep(2)
+            
+            # Retry logic for S3 file availability
+            max_retries = 3
+            retry_delay = 5  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    # Generate poetry
+                    poetry_service = get_poetry_service()
+                    title, content = await poetry_service.generate_poetry_from_image(
+                        image_path=db_image.file_path,
+                        style=style,
+                        language=language
+                    )
+                    break  # Success, exit retry loop
+                    
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        print(f"Poetry generation attempt {attempt + 1} failed: {str(e)}")
+                        print(f"Retrying in {retry_delay} seconds...")
+                        await asyncio.sleep(retry_delay)
+                        continue
+                    else:
+                        # Final attempt failed
+                        raise e
             
             # Update database
             image_service.update_image_poetry(

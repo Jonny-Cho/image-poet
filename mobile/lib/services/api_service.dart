@@ -59,9 +59,32 @@ class ApiService {
         // 웹에서는 XFile 처리
         fileName = imageFile.name;
         final bytes = await imageFile.readAsBytes();
+        
+        // 파일 확장자에 따라 MIME 타입 결정
+        String? contentType;
+        final extension = fileName.toLowerCase().split('.').last;
+        switch (extension) {
+          case 'png':
+            contentType = 'image/png';
+            break;
+          case 'jpg':
+          case 'jpeg':
+            contentType = 'image/jpeg';
+            break;
+          case 'gif':
+            contentType = 'image/gif';
+            break;
+          case 'webp':
+            contentType = 'image/webp';
+            break;
+          default:
+            contentType = 'image/jpeg'; // 기본값
+        }
+        
         multipartFile = MultipartFile.fromBytes(
           bytes,
           filename: fileName,
+          contentType: DioMediaType.parse(contentType),
         );
       } else if (imageFile is File) {
         // 모바일에서는 File 처리
@@ -76,13 +99,12 @@ class ApiService {
       
       // FormData 생성
       final formData = FormData.fromMap({
-        'image': multipartFile,
-        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+        'file': multipartFile,
       });
 
       // 업로드 진행률 콜백 설정
       final response = await _dio.post(
-        '/api/upload-image',
+        '/api/v1/images/upload?auto_generate_poetry=true&style=classic&language=korean',
         data: formData,
         onSendProgress: (sent, total) {
           if (onProgress != null && total > 0) {
@@ -117,9 +139,32 @@ class ApiService {
         // 웹에서는 XFile 처리
         fileName = imageFile.name;
         final bytes = await imageFile.readAsBytes();
+        
+        // 파일 확장자에 따라 MIME 타입 결정
+        String? contentType;
+        final extension = fileName.toLowerCase().split('.').last;
+        switch (extension) {
+          case 'png':
+            contentType = 'image/png';
+            break;
+          case 'jpg':
+          case 'jpeg':
+            contentType = 'image/jpeg';
+            break;
+          case 'gif':
+            contentType = 'image/gif';
+            break;
+          case 'webp':
+            contentType = 'image/webp';
+            break;
+          default:
+            contentType = 'image/jpeg'; // 기본값
+        }
+        
         multipartFile = MultipartFile.fromBytes(
           bytes,
           filename: fileName,
+          contentType: DioMediaType.parse(contentType),
         );
       } else if (imageFile is File) {
         // 모바일에서는 File 처리
@@ -133,11 +178,11 @@ class ApiService {
       }
       
       final formData = FormData.fromMap({
-        'image': multipartFile,
+        'file': multipartFile,
       });
 
       final response = await _dio.post(
-        '/api/upload',
+        '/api/v1/images/upload',
         data: formData,
         onSendProgress: (sent, total) {
           if (onProgress != null && total > 0) {
@@ -162,8 +207,8 @@ class ApiService {
   Future<UploadResponse> generatePoetryFromImageId(String imageId) async {
     try {
       final response = await _dio.post(
-        '/api/generate-poetry',
-        data: {'image_id': imageId},
+        '/api/v1/images/${imageId}/generate-poetry',
+        data: {},
       );
 
       if (response.statusCode == 200) {
@@ -185,7 +230,7 @@ class ApiService {
   }) async {
     try {
       final response = await _dio.get(
-        '/api/uploads',
+        '/api/v1/images',
         queryParameters: {
           'page': page,
           'limit': limit,
@@ -193,7 +238,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['uploads'];
+        final List<dynamic> data = response.data;
         return data.map((json) => UploadResponse.fromJson(json)).toList();
       } else {
         throw ApiException('업로드 기록 조회 실패: ${response.statusMessage}');
