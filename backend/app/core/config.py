@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
     
     # Security
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")  # Required field
+    SECRET_KEY: str = Field(default="development-secret-key", env="SECRET_KEY")
     ALGORITHM: str = Field(default="HS256", env="ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     
