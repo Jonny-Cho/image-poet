@@ -21,7 +21,7 @@ install: ## Install dependencies
 
 dev: ## Start development server (local file storage)
 	@echo "🚀 Starting development server with local file storage..."
-	@cp .env.example .env 2>/dev/null || echo "Using existing .env"
+	@[ ! -f .env ] && cp .env.example .env && echo "Created .env from .env.example" || echo "Using existing .env"
 	$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-localstack: ## Start development server with LocalStack S3
@@ -65,7 +65,7 @@ logs: ## Show LocalStack logs
 # Environment switching
 env-local: ## Switch to local file storage
 	@cp .env.example .env
-	@echo "✅ Switched to local file storage environment"
+	@echo "✅ Switched to local file storage environment (overwrote existing .env)"
 
 env-localstack: ## Switch to LocalStack S3 environment  
 	@cp .env.localstack .env
