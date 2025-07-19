@@ -12,20 +12,26 @@ class TestSettings:
     """Test application settings and configuration"""
     
     def test_default_settings(self):
-        """Test settings values from .env file (current setup)"""
-        # Clear environment to test .env file defaults
+        """Test settings with code defaults (environment independent)"""
+        # Clear environment and disable .env file loading
         with patch.dict(os.environ, {}, clear=True):
-            test_settings = Settings()
+            # Create Settings without env_file to test pure code defaults
+            class TestSettings(Settings):
+                class Config:
+                    env_file = None  # Disable .env file loading
+                    case_sensitive = True
+            
+            test_settings = TestSettings()
         
             assert test_settings.APP_NAME == "Image Poet API"
             assert test_settings.VERSION == "0.1.0"
-            assert test_settings.DEBUG is True  # From .env file
-            assert test_settings.ENVIRONMENT == "development"  # From .env file
+            assert test_settings.DEBUG is False  # Code default
+            assert test_settings.ENVIRONMENT == "development"  # Code default
             assert test_settings.ALGORITHM == "HS256"
             assert test_settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
-            assert test_settings.AWS_DEFAULT_REGION == "us-east-1"  # From .env file
-            assert test_settings.USE_S3_STORAGE is True  # From .env file
-            assert test_settings.USE_LOCALSTACK is True  # From .env file
+            assert test_settings.AWS_DEFAULT_REGION == "ap-northeast-2"  # Code default
+            assert test_settings.USE_S3_STORAGE is False  # Code default
+            assert test_settings.USE_LOCALSTACK is False  # Code default
             assert test_settings.LOCALSTACK_ENDPOINT == "http://localhost:4566"
     
     def test_settings_from_environment(self):
@@ -74,13 +80,25 @@ class TestSettings:
         """Test database URL validation"""
         # Test development environment
         with patch.dict(os.environ, {'ENVIRONMENT': 'development'}, clear=True):
-            test_settings = Settings()
+            # Create Settings without env_file to test pure code defaults
+            class TestSettings(Settings):
+                class Config:
+                    env_file = None  # Disable .env file loading
+                    case_sensitive = True
+            
+            test_settings = TestSettings()
             assert test_settings.DATABASE_URL == "sqlite:///./image_poet.db"
         
         # Test production environment without DATABASE_URL
         with patch.dict(os.environ, {'ENVIRONMENT': 'production'}, clear=True):
+            # Create Settings without env_file to test pure code defaults
+            class TestSettings(Settings):
+                class Config:
+                    env_file = None  # Disable .env file loading
+                    case_sensitive = True
+            
             with pytest.raises(ValueError, match="DATABASE_URL must be set in production"):
-                Settings()
+                TestSettings()
         
         # Test production environment with DATABASE_URL
         with patch.dict(os.environ, {
@@ -92,10 +110,16 @@ class TestSettings:
     
     def test_secret_key_validation(self):
         """Test secret key validation"""
-        # Test development environment (will read from .env file)
+        # Test development environment with code defaults
         with patch.dict(os.environ, {'ENVIRONMENT': 'development'}, clear=True):
-            test_settings = Settings()
-            assert test_settings.SECRET_KEY == "localstack-dev-secret-key"  # From .env file
+            # Create Settings without env_file to test pure code defaults
+            class TestSettings(Settings):
+                class Config:
+                    env_file = None  # Disable .env file loading
+                    case_sensitive = True
+            
+            test_settings = TestSettings()
+            assert test_settings.SECRET_KEY == "development-secret-key"  # Code default
         
         # Test production environment without SECRET_KEY (override .env)
         with patch.dict(os.environ, {'ENVIRONMENT': 'production', 'SECRET_KEY': ''}, clear=True):
