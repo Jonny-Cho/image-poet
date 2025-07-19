@@ -2,9 +2,9 @@
 Configuration settings for the Image Poet API
 """
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 
 
 class Settings(BaseSettings):
@@ -17,10 +17,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="development", env="ENVIRONMENT")
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000"], env="BACKEND_CORS_ORIGINS")
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = Field(default=["http://localhost:3000"], env="BACKEND_CORS_ORIGINS")
     
     # Database
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
+    DATABASE_ECHO: bool = Field(default=False, env="DATABASE_ECHO")
     
     # Security
     SECRET_KEY: str = Field(default="development-secret-key", env="SECRET_KEY")
@@ -30,25 +31,48 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     
+    # AWS S3
+    AWS_ACCESS_KEY_ID: Optional[str] = Field(default=None, env="AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY: Optional[str] = Field(default=None, env="AWS_SECRET_ACCESS_KEY")
+    AWS_DEFAULT_REGION: str = Field(default="ap-northeast-2", env="AWS_DEFAULT_REGION")
+    S3_BUCKET_NAME: Optional[str] = Field(default=None, env="S3_BUCKET_NAME")
+    
+    # Storage settings
+    USE_S3_STORAGE: bool = Field(default=False, env="USE_S3_STORAGE")
+    USE_LOCALSTACK: bool = Field(default=False, env="USE_LOCALSTACK")
+    LOCALSTACK_ENDPOINT: str = Field(default="http://localhost:4566", env="LOCALSTACK_ENDPOINT")
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
         
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v) -> List[str]:
+        if v is None:
+            return ["http://localhost:3000"]
+        if isinstance(v, str):
+            # Handle comma-separated string
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, list):
             return v
-        raise ValueError(v)
+        # If it's not a string or list, return default
+        return ["http://localhost:3000"]
     
-    @validator("DATABASE_URL", pre=True)
+    def model_post_init(self, __context) -> None:
+        # Ensure BACKEND_CORS_ORIGINS is always a list
+        if isinstance(self.BACKEND_CORS_ORIGINS, str):
+            self.BACKEND_CORS_ORIGINS = self.assemble_cors_origins(self.BACKEND_CORS_ORIGINS)
+    
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
     def validate_database_url(cls, v: Optional[str]) -> Optional[str]:
         if v is None and os.getenv("ENVIRONMENT") == "production":
             raise ValueError("DATABASE_URL must be set in production")
-        return v or "postgresql://imagepoet:password@localhost:5432/imagepoet"
+        return v or "sqlite:///./image_poet.db"
     
-    @validator("SECRET_KEY", pre=True)
+    @field_validator("SECRET_KEY", mode="before")
+    @classmethod
     def validate_secret_key(cls, v: Optional[str]) -> str:
         if not v:
             if os.getenv("ENVIRONMENT") == "production":
