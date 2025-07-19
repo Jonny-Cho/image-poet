@@ -3,7 +3,7 @@ Pydantic schemas for image API
 """
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ImageBase(BaseModel):
@@ -67,14 +67,16 @@ class PoetryGenerationRequest(BaseModel):
     style: Optional[str] = Field("classic", description="Poetry style preference")
     language: Optional[str] = Field("korean", description="Poetry language")
     
-    @validator("style")
+    @field_validator("style")
+    @classmethod
     def validate_style(cls, v):
         allowed_styles = ["classic", "modern", "haiku", "free_verse"]
         if v not in allowed_styles:
             raise ValueError(f"Style must be one of {allowed_styles}")
         return v
     
-    @validator("language")
+    @field_validator("language")
+    @classmethod
     def validate_language(cls, v):
         allowed_languages = ["korean", "english", "japanese"]
         if v not in allowed_languages:

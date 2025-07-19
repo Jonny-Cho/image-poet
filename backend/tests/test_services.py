@@ -107,7 +107,11 @@ class TestImageService:
         try:
             with patch.object(image_service.s3_service, 'is_available', return_value=True), \
                  patch.object(image_service.s3_service, 'upload_file', 
-                            return_value=("images/test.jpg", "https://s3.url/test.jpg")) as mock_upload:
+                            return_value=("images/test.jpg", "https://s3.url/test.jpg")) as mock_upload, \
+                 patch('app.services.image_service.settings') as mock_settings:
+                
+                # Mock settings to enable S3
+                mock_settings.USE_S3_STORAGE = True
                 
                 # Reset file pointer
                 mock_upload_file.file.seek(0)

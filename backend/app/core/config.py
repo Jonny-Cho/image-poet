@@ -2,7 +2,7 @@
 Configuration settings for the Image Poet API
 """
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic_settings import BaseSettings
 from pydantic import Field, field_validator
 
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = Field(default="development", env="ENVIRONMENT")
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000"], env="BACKEND_CORS_ORIGINS")
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = Field(default=["http://localhost:3000"], env="BACKEND_CORS_ORIGINS")
     
     # Database
     DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
@@ -48,12 +48,21 @@ class Settings(BaseSettings):
         
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
+    def assemble_cors_origins(cls, v) -> List[str]:
+        if v is None:
+            return ["http://localhost:3000"]
+        if isinstance(v, str):
+            # Handle comma-separated string
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, list):
             return v
-        raise ValueError(v)
+        # If it's not a string or list, return default
+        return ["http://localhost:3000"]
+    
+    def model_post_init(self, __context) -> None:
+        # Ensure BACKEND_CORS_ORIGINS is always a list
+        if isinstance(self.BACKEND_CORS_ORIGINS, str):
+            self.BACKEND_CORS_ORIGINS = self.assemble_cors_origins(self.BACKEND_CORS_ORIGINS)
     
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

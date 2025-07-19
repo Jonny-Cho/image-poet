@@ -97,7 +97,7 @@ class ImageService:
                 user_agent=user_agent
             )
             
-            db_image = Image(**image_data.dict())
+            db_image = Image(**image_data.model_dump())
             db.add(db_image)
             db.commit()
             db.refresh(db_image)
